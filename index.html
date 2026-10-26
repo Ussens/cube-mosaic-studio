@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cube Mosaic">
+<style>*,*::before,*::after{box-sizing:border-box}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Cube Mosaic Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: board left as the hero, controls in a side rail, build guide below as a cube-by-cube grid */
+:root{
+  --bg:#eef0f3; --surface:#ffffff; --ink:#16181d; --muted:#5d6370; --line:#d5d9e0;
+  --plastic:#111214; --accent:#0051BA; --accent-ink:#ffffff; --done:#0a7d4a;
+  --f-display:"Chakra Petch",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121418; --surface:#1b1e24; --ink:#eceef2; --muted:#9aa1ad; --line:#2d323b;
+  --plastic:#050506; --accent:#4d8dff; --accent-ink:#0b0d10; --done:#39c07f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121418; --surface:#1b1e24; --ink:#eceef2; --muted:#9aa1ad; --line:#2d323b;
+  --plastic:#050506; --accent:#4d8dff; --accent-ink:#0b0d10; --done:#39c07f; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(26px,4vw,36px);font-weight:700}
+h2{font-size:20px;font-weight:700}
+h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.sub{color:var(--muted);max-width:62ch;margin:6px 0 0}
+
+.studio{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:860px){.studio{grid-template-columns:minmax(0,1fr)}}
+.boardbox{min-width:0;display:flex;flex-direction:column;gap:10px}
+#board{display:block;max-width:100%;touch-action:none;cursor:crosshair;border-radius:10px}
+.hint{font-size:13px;color:var(--muted)}
+
+.rail{display:flex;flex-direction:column;gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.group{display:flex;flex-direction:column;gap:8px}
+.palette{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.sw{aspect-ratio:1;max-width:100%;border-radius:8px;border:3px solid var(--plastic);cursor:pointer;position:relative;padding:0}
+.sw[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
+.sw span{position:absolute;bottom:-20px;left:0;right:0;font-size:11px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.palette{margin-bottom:16px}
+
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+button.b{font:600 13px var(--f-body);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.b[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.b.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,label.file:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,input[type=number]{font:500 14px var(--f-body);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+input[type=number]{width:58px}
+label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+label.file{font:600 13px var(--f-body);color:var(--ink);background:var(--bg);border:1px dashed var(--muted);border-radius:8px;padding:10px;justify-content:center;cursor:pointer}
+label.file input{position:absolute;opacity:0;width:1px;height:1px}
+.toast{font-size:13px;color:var(--done);min-height:1.2em}
+
+.guidehead{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px}
+.guide{display:grid;gap:14px}
+.cube{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.cube.done{opacity:.45}
+.cube.done .tag{color:var(--done)}
+.cube .face{display:grid;gap:3px;background:var(--plastic);padding:4px;border-radius:6px;aspect-ratio:1;max-width:100%}
+.cube .face i{border-radius:3px;display:block}
+.cube .face i.c{box-shadow:inset 0 0 0 2px rgba(0,0,0,.35)}
+.cube .meta{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.cube .id{font:700 16px var(--f-display)}
+.tag{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Cube Mosaic Studio</h1>
+    <p class="sub">Design pixel art for a grid of Rubik's cubes. Each cube shows one face, so every cube is a block of stickers. Paint the board, or import a photo, then build cube by cube from the guide.</p>
+  </header>
+
+  <section class="studio">
+    <div class="boardbox">
+      <canvas id="board" aria-label="Mosaic board"></canvas>
+      <div class="hint" id="dims"></div>
+    </div>
+
+    <aside class="rail">
+      <div class="group">
+        <h3>Colour</h3>
+        <div class="palette" id="palette"></div>
+      </div>
+
+      <div class="group">
+        <h3>Tool</h3>
+        <div class="seg" id="tools">
+          <button class="b" data-tool="paint" aria-pressed="true">Paint</button>
+          <button class="b" data-tool="fill" aria-pressed="false">Fill</button>
+          <button class="b" data-tool="pick" aria-pressed="false">Pick colour</button>
+        </div>
+        <div class="seg">
+          <button class="b" id="mirror" aria-pressed="false">Mirror ↔</button>
+          <button class="b" id="undo">Undo</button>
+          <button class="b" id="redo">Redo</button>
+          <button class="b" id="clear">Fill all</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Import picture</h3>
+        <label class="file" for="img">Choose an image…<input type="file" id="img" accept="image/*"></label>
+        <div class="row">
+          <label><input type="checkbox" id="dither"> Dither</label>
+          <label><input type="checkbox" id="crop" checked> Crop to fill</label>
+        </div>
+        <div class="row">
+          <label for="bright">Brightness</label>
+          <input type="range" id="bright" min="-60" max="60" value="0" style="flex:1">
+        </div>
+        <div class="row">
+          <label for="contrast">Contrast</label>
+          <input type="range" id="contrast" min="-50" max="80" value="0" style="flex:1">
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Board</h3>
+        <div class="row">
+          <label for="cols">Cubes across</label><input type="number" id="cols" min="1" max="12">
+          <label for="rows">down</label><input type="number" id="rows" min="1" max="12">
+        </div>
+        <div class="row">
+          <label for="n">Cube type</label>
+          <select id="n"><option value="2">2×2</option><option value="3">3×3</option><option value="4">4×4</option><option value="5">5×5</option></select>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Save &amp; share</h3>
+        <div class="seg">
+          <button class="b" id="copy">Copy design code</button>
+          <button class="b" id="paste">Load code</button>
+        </div>
+        <textarea id="code" rows="3" style="font:12px ui-monospace,Menlo,monospace;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical" placeholder="Design code appears here; paste one to load it." aria-label="Design code"></textarea>
+        <div class="toast" id="toast" role="status"></div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="group" style="gap:14px">
+    <div class="guidehead">
+      <div>
+        <h2>Build guide</h2>
+        <p class="sub">Hold each cube with the outlined centre colour facing you, top of the face pointing up. Tap a cube to mark it done.</p>
+      </div>
+      <div class="row"><span class="tag" id="progress"></span><button class="b" id="resetdone">Clear ticks</button></div>
+    </div>
+    <div class="guide" id="guide"></div>
+  </section>
+</div>
+
+<script>
+const PAL=[
+  {name:"White",hex:"#f2f2ee"},{name:"Yellow",hex:"#ffd500"},{name:"Orange",hex:"#ff5800"},
+  {name:"Red",hex:"#c41e3a"},{name:"Green",hex:"#009e60"},{name:"Blue",hex:"#0051ba"}];
+const RGB=PAL.map(p=>[1,3,5].map(i=>parseInt(p.hex.slice(i,i+2),16)));
+const KEY="cube-mosaic-v1";
+let S={cols:5,rows:5,n:3,grid:null,done:[]};
+let cur=3,tool="paint",mirror=false,undo=[],redo=[],lastImg=null;
+
+function W(){return S.cols*S.n} function H(){return S.rows*S.n}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({...S,grid:Array.from(S.grid)}))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.grid&&d.grid.length===d.cols*d.n*d.rows*d.n){S=d;S.grid=Uint8Array.from(d.grid);S.done=d.done||[];return true}}catch(e){}return false}
+
+function sample(){ // example heart
+  const g=new Uint8Array(W()*H()).fill(0);
+  for(let y=0;y<H();y++)for(let x=0;x<W();x++){
+    const u=(x+.5)/W()*2.6-1.3, v=1.25-(y+.5)/H()*2.5;
+    const f=Math.pow(u*u+v*v-1,3)-u*u*v*v*v;
+    if(f<=0) g[y*W()+x]=3;
+    if(f<=0 && u<-.35 && u>-.75 && v>.55 && v<.95) g[y*W()+x]=0;
+  }
+  return g;
+}
+
+/* ---------- board ---------- */
+const cv=document.getElementById("board"),ctx=cv.getContext("2d");
+let geo={};
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function layout(){
+  const box=cv.parentElement.clientWidth;
+  const label=22, pad=10;
+  const cg=Math.max(4,Math.round(box/120)); // gap between cubes
+  let s=Math.floor((box-label-pad*2-(S.cols-1)*cg)/W());
+  s=Math.max(8,Math.min(s,46));
+  const w=label+pad*2+W()*s+(S.cols-1)*cg, h=label+pad*2+H()*s+(S.rows-1)*cg;
+  geo={s,cg,label,pad,w,h};
+  const dpr=window.devicePixelRatio||1;
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+"px";cv.style.height=h+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function ox(i){return geo.label+geo.pad+i*geo.s+Math.floor(i/S.n)*geo.cg}
+function oy(j){return geo.label+geo.pad+j*geo.s+Math.floor(j/S.n)*geo.cg}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect?ctx.roundRect(x,y,w,h,r):ctx.rect(x,y,w,h)}
+function draw(){
+  const {s,label,pad,w,h}=geo;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle=css("--plastic");rr(label,label,w-label,h-label,10);ctx.fill();
+  ctx.fillStyle=css("--muted");ctx.font=`600 12px ${css("--f-display")}`;ctx.textAlign="center";ctx.textBaseline="middle";
+  for(let c=0;c<S.cols;c++){const x=ox(c*S.n)+S.n*s/2;ctx.fillText(String.fromCharCode(65+c),x,label/2)}
+  for(let r=0;r<S.rows;r++){const y=oy(r*S.n)+S.n*s/2;ctx.fillText(r+1,label/2,y)}
+  const g=Math.max(1,Math.round(s*.08)), rad=Math.max(1,s*.14);
+  for(let y=0;y<H();y++)for(let x=0;x<W();x++){
+    ctx.fillStyle=PAL[S.grid[y*W()+x]].hex;
+    rr(ox(x)+g,oy(y)+g,s-2*g,s-2*g,rad);ctx.fill();
+  }
+  if(mirror){ctx.strokeStyle=css("--accent");ctx.setLineDash([5,5]);ctx.lineWidth=2;
+    const mx=(ox(0)+ox(W()-1)+s)/2;ctx.beginPath();ctx.moveTo(mx,label+2);ctx.lineTo(mx,h-2);ctx.stroke();ctx.setLineDash([])}
+  document.getElementById("dims").textContent=`${S.cols} × ${S.rows} cubes · ${W()} × ${H()} stickers · ${S.cols*S.rows} cubes needed`;
+}
+function hit(e){
+  const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*(geo.w/r.width),py=(e.clientY-r.top)*(geo.h/r.height);
+  let x=-1,y=-1;
+  for(let i=0;i<W();i++)if(px>=ox(i)&&px<ox(i)+geo.s){x=i;break}
+  for(let j=0;j<H();j++)if(py>=oy(j)&&py<oy(j)+geo.s){y=j;break}
+  return x<0||y<0?null:{x,y};
+}
+function snapshot(){undo.push(S.grid.slice());if(undo.length>80)undo.shift();redo=[]}
+function setCell(x,y,c){S.grid[y*W()+x]=c;if(mirror)S.grid[y*W()+(W()-1-x)]=c}
+function flood(x,y,c){
+  const t=S.grid[y*W()+x];if(t===c)return;
+  const st=[[x,y]];
+  while(st.length){const[a,b]=st.pop();if(a<0||b<0||a>=W()||b>=H()||S.grid[b*W()+a]!==t)continue;
+    S.grid[b*W()+a]=c;st.push([a+1,b],[a-1,b],[a,b+1],[a,b-1])}
+}
+let down=false;
+cv.addEventListener("pointerdown",e=>{const p=hit(e);if(!p)return;
+  if(tool==="pick"){selectColour(S.grid[p.y*W()+p.x]);setTool("paint");return}
+  snapshot();
+  if(tool==="fill"){flood(p.x,p.y,cur);if(mirror)flood(W()-1-p.x,p.y,cur);commit();return}
+  down=true;cv.setPointerCapture(e.pointerId);setCell(p.x,p.y,cur);draw();
+});
+cv.addEventListener("pointermove",e=>{if(!down)return;const p=hit(e);if(p){setCell(p.x,p.y,cur);draw()}});
+cv.addEventListener("pointerup",()=>{if(down){down=false;commit()}});
+cv.addEventListener("pointercancel",()=>{if(down){down=false;commit()}});
+function commit(){draw();renderGuide();renderCounts();save()}
+
+/* ---------- controls ---------- */
+const palEl=document.getElementById("palette");
+PAL.forEach((p,i)=>{const b=document.createElement("button");b.className="sw";b.style.background=p.hex;
+  b.title=p.name;b.setAttribute("aria-label",p.name);b.innerHTML="<span></span>";b.onclick=()=>selectColour(i);palEl.appendChild(b)});
+function selectColour(i){cur=i;[...palEl.children].forEach((b,j)=>b.setAttribute("aria-pressed",j===i))}
+function renderCounts(){const c=new Array(6).fill(0);S.grid.forEach(v=>c[v]++);[...palEl.children].forEach((b,j)=>b.firstChild.textContent=c[j])}
+function setTool(t){tool=t;document.querySelectorAll("#tools .b").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tool===t))}
+document.querySelectorAll("#tools .b").forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+document.getElementById("mirror").onclick=e=>{mirror=!mirror;e.currentTarget.setAttribute("aria-pressed",mirror);draw()};
+document.getElementById("undo").onclick=()=>{if(!undo.length)return;redo.push(S.grid.slice());S.grid=undo.pop();commit()};
+document.getElementById("redo").onclick=()=>{if(!redo.length)return;undo.push(S.grid.slice());S.grid=redo.pop();commit()};
+document.getElementById("clear").onclick=()=>{snapshot();S.grid.fill(cur);commit();toast(`Board filled with ${PAL[cur].name.toLowerCase()}. Undo restores it.`)};
+document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="z"){e.preventDefault();document.getElementById(e.shiftKey?"redo":"undo").click()}});
+
+function resize(cols,rows,n){
+  const old=S.grid,ow=W(),oh=H();
+  S.cols=cols;S.rows=rows;S.n=n;
+  const g=new Uint8Array(W()*H());
+  for(let y=0;y<Math.min(oh,H());y++)for(let x=0;x<Math.min(ow,W());x++)g[y*W()+x]=old[y*ow+x];
+  S.grid=g;S.done=[];undo=[];redo=[];layout();commit();
+  if(lastImg)importImage(lastImg);
+}
+const colsEl=document.getElementById("cols"),rowsEl=document.getElementById("rows"),nEl=document.getElementById("n");
+function clampInt(v){return Math.max(1,Math.min(12,parseInt(v)||1))}
+[colsEl,rowsEl,nEl].forEach(el=>el.addEventListener("change",()=>resize(clampInt(colsEl.value),clampInt(rowsEl.value),+nEl.value)));
+
+/* ---------- image import ---------- */
+function nearest(r,g,b){let best=0,bd=1e9;
+  for(let i=0;i<6;i++){const[R,G,B]=RGB[i],rm=(r+R)/2,dr=r-R,dg=g-G,db=b-B;
+    const d=(2+rm/256)*dr*dr+4*dg*dg+(2+(255-rm)/256)*db*db;if(d<bd){bd=d;best=i}}return best}
+function importImage(img){
+  lastImg=img;
+  const w=W(),h=H(),c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");
+  x.imageSmoothingQuality="high";
+  const ir=img.width/img.height,tr=w/h;
+  if(document.getElementById("crop").checked){
+    let sw=img.width,sh=img.height,sx=0,sy=0;
+    if(ir>tr){sw=img.height*tr;sx=(img.width-sw)/2}else{sh=img.width/tr;sy=(img.height-sh)/2}
+    x.drawImage(img,sx,sy,sw,sh,0,0,w,h);
+  }else{
+    x.fillStyle="#fff";x.fillRect(0,0,w,h);
+    let dw=w,dh=h;if(ir>tr)dh=w/ir;else dw=h*ir;x.drawImage(img,(w-dw)/2,(h-dh)/2,dw,dh);
+  }
+  const d=x.getImageData(0,0,w,h).data,f=new Float32Array(w*h*3);
+  const br=+document.getElementById("bright").value,ct=+document.getElementById("contrast").value,k=(100+ct)/100;
+  for(let i=0;i<w*h;i++)for(let ch=0;ch<3;ch++)f[i*3+ch]=(d[i*4+ch]-128)*k+128+br;
+  const dith=document.getElementById("dither").checked;snapshot();
+  for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){
+    const i=yy*w+xx,r=f[i*3],g=f[i*3+1],b=f[i*3+2],p=nearest(Math.max(0,Math.min(255,r)),Math.max(0,Math.min(255,g)),Math.max(0,Math.min(255,b)));
+    S.grid[i]=p;
+    if(dith){const e=[r-RGB[p][0],g-RGB[p][1],b-RGB[p][2]];
+      [[1,0,7/16],[-1,1,3/16],[0,1,5/16],[1,1,1/16]].forEach(([a,bb,wt])=>{const X=xx+a,Y=yy+bb;if(X<0||X>=w||Y>=h)return;
+        const j=(Y*w+X)*3;for(let ch=0;ch<3;ch++)f[j+ch]+=e[ch]*wt})}
+  }
+  S.done=[];commit();
+}
+document.getElementById("img").addEventListener("change",e=>{const file=e.target.files[0];if(!file)return;
+  const im=new Image();im.onload=()=>{importImage(im);toast("Picture converted to cube colours.")};
+  im.onerror=()=>toast("That file couldn't be read as an image. Try a JPG or PNG.");
+  im.src=URL.createObjectURL(file)});
+["dither","crop","bright","contrast"].forEach(id=>document.getElementById(id).addEventListener("change",()=>{if(lastImg)importImage(lastImg)}));
+
+/* ---------- code share ---------- */
+const LET="WYORGB";
+function encode(){return `${S.cols}x${S.rows}x${S.n}:`+Array.from(S.grid,v=>LET[v]).join("")}
+document.getElementById("copy").onclick=()=>{const t=encode(),ta=document.getElementById("code");ta.value=t;
+  navigator.clipboard.writeText(t).then(()=>toast("Design code copied.")).catch(()=>{ta.select();toast("Code selected. Press ⌘C to copy.")})};
+document.getElementById("paste").onclick=()=>{
+  const t=document.getElementById("code").value.trim(),m=t.match(/^(\d+)x(\d+)x(\d+):([WYORGB]+)$/i);
+  if(!m){toast("That code doesn't look right. It should start like 5x5x3: followed by letters.");return}
+  const[c,r,n]=[+m[1],+m[2],+m[3]],s=m[4].toUpperCase();
+  if(s.length!==c*n*r*n){toast("The code is incomplete. Copy it again from the source.");return}
+  S={cols:c,rows:r,n,grid:Uint8Array.from(s,ch=>LET.indexOf(ch)),done:[]};lastImg=null;undo=[];redo=[];syncInputs();layout();commit();toast("Design loaded.")};
+let tt;function toast(m){const el=document.getElementById("toast");el.textContent=m;clearTimeout(tt);tt=setTimeout(()=>el.textContent="",4000)}
+
+/* ---------- build guide ---------- */
+const guide=document.getElementById("guide");
+function renderGuide(){
+  guide.style.gridTemplateColumns=`repeat(auto-fill,minmax(${S.n>3?150:120}px,1fr))`;
+  guide.innerHTML="";const mid=S.n%2?(S.n-1)/2:-1;let doneN=0;
+  for(let r=0;r<S.rows;r++)for(let c=0;c<S.cols;c++){
+    const id=String.fromCharCode(65+c)+(r+1),isDone=S.done.includes(id);if(isDone)doneN++;
+    const b=document.createElement("button");b.className="cube"+(isDone?" done":"");b.setAttribute("aria-pressed",isDone);
+    let cells="";
+    for(let y=0;y<S.n;y++)for(let x=0;x<S.n;x++){const v=S.grid[(r*S.n+y)*W()+c*S.n+x];
+      cells+=`<i style="background:${PAL[v].hex}" class="${y===mid&&x===mid?"c":""}"></i>`}
+    const centre=mid>=0?PAL[S.grid[(r*S.n+mid)*W()+c*S.n+mid]].name+" centre":"no fixed centre";
+    b.innerHTML=`<div class="face" style="grid-template-columns:repeat(${S.n},1fr)">${cells}</div>
+      <div class="meta"><span class="id">${id}</span><span class="tag">${isDone?"Done ✓":centre}</span></div>`;
+    b.onclick=()=>{S.done=isDone?S.done.filter(d=>d!==id):[...S.done,id];save();renderGuide()};
+    guide.appendChild(b);
+  }
+  document.getElementById("progress").textContent=`${doneN} of ${S.cols*S.rows} cubes done`;
+}
+document.getElementById("resetdone").onclick=()=>{S.done=[];save();renderGuide()};
+
+function syncInputs(){colsEl.value=S.cols;rowsEl.value=S.rows;nEl.value=S.n}
+if(!load()){S.grid=sample()}
+syncInputs();selectColour(cur);layout();draw();renderGuide();renderCounts();
+let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{layout();draw()},100)});
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+document.fonts?.ready.then(draw);
+</script>
+</body>
+</html>
